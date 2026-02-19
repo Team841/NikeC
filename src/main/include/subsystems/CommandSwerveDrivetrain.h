@@ -11,11 +11,15 @@
 
 #include "constants/TunerConstants.h"
 #include "ctre/phoenix6/swerve/SwerveRequest.hpp"
+#include "frc/geometry/Pose3d.h"
+#include "frc2/command/InstantCommand.h"
 #include "networktables/NetworkTable.h"
 #include "networktables/NetworkTableInstance.h"
+#include "networktables/StructArrayTopic.h"
 #include <pathplanner/lib/auto/AutoBuilder.h>
 #include <pathplanner/lib/config/RobotConfig.h>
 #include <pathplanner/lib/controllers/PPHolonomicDriveController.h>
+#include <vector>
 
 using namespace ctre::phoenix6;
 
@@ -164,10 +168,16 @@ public:
 
     std::shared_ptr<nt::NetworkTable> appleTable = nt::NetworkTableInstance::GetDefault().GetTable("limelight-apple");
 
+    nt::StructArraySubscriber<frc::Pose3d> targPoses = nt::NetworkTableInstance::GetDefault().GetTable("BVIS")->GetStructArrayTopic<frc::Pose3d>("Proj Poses").Subscribe(std::vector<frc::Pose3d>{});
+    nt::StructArrayPublisher<frc::Pose3d> adjustedPoses = nt::NetworkTableInstance::GetDefault().GetTable("BVIS")->GetStructArrayTopic<frc::Pose3d>("adjusted Poses").Publish();
+
+    frc2::CommandPtr latestCommand = frc2::InstantCommand().ToPtr();
+
     void Periodic() override;
     void visionPeriodic();
     void setLLSettings();
     void ConfigurePathPlanner();
+    frc2::CommandPtr buildPickupAuto();
 
 
     /**
