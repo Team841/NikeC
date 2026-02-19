@@ -59,7 +59,7 @@ void CommandSwerveDrivetrain::visionPeriodic(){
 
     double base1 = 0.3;
     double base2 = 0.3;
-    double base3 = 99999;
+    double base3 = 0.3;
 
     bool seesTarget = this->appleTable->GetEntry("tv").GetDouble(0) == 1.0;
     if (seesTarget){
@@ -84,7 +84,7 @@ void CommandSwerveDrivetrain::setLLSettings(){
             units::meter_t{0}
         };
         
-        LimelightHelpers::setCameraPose_RobotSpace("limelight-apple", limelightToCenterOfTurret.Y().value(), limelightToCenterOfTurret.X().value(),  0.7747, 0, 0, 0);
+        LimelightHelpers::setCameraPose_RobotSpace("limelight-apple", limelightToCenterOfTurret.Y().value(), limelightToCenterOfTurret.X().value(),  0.7747, 0, 0, 180);
 
     } catch (...){
         return;

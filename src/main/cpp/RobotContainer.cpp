@@ -5,13 +5,15 @@
 #include "RobotContainer.h"
 #include "frc/DriverStation.h"
 #include "units/velocity.h"
-#include "wpi/raw_ostream.h"
+#include <frc/smartdashboard/SmartDashboard.h>
 
 #include <frc2/command/Commands.h>
 #include <frc2/command/button/RobotModeTriggers.h>
 
 RobotContainer::RobotContainer()
 {
+    autoChooser = pathplanner::AutoBuilder::buildAutoChooser("autos");
+    frc::SmartDashboard::PutData("Auto Mode", &autoChooser);
     ConfigureBindings();
 }
 
@@ -59,21 +61,23 @@ void RobotContainer::ConfigureBindings()
     drivetrain.RegisterTelemetry([this](auto const &state) { logger.Telemeterize(state); });
 }
 
-frc2::CommandPtr RobotContainer::GetAutonomousCommand()
+frc2::Command *RobotContainer::GetAutonomousCommand()
 {
-    // Simple drive forward auton
-    return frc2::cmd::Sequence(
-        // Reset our field centric heading to match the robot
-        // facing away from our alliance station wall (0 deg).
-        drivetrain.RunOnce([this] { drivetrain.SeedFieldCentric(frc::Rotation2d{0_deg}); }),
-        // Then slowly drive forward (away from us) for 5 seconds.
-        drivetrain.ApplyRequest([this]() -> auto&& {
-            return drive.WithVelocityX(0.5_mps)
-                .WithVelocityY(0_mps)
-                .WithRotationalRate(0_tps);
-        })
-        .WithTimeout(5_s),
-        // Finally idle for the rest of auton
-        drivetrain.ApplyRequest([] { return swerve::requests::Idle{}; })
-    );
+    // // Simple drive forward auton
+    // return frc2::cmd::Sequence(
+    //     // Reset our field centric heading to match the robot
+    //     // facing away from our alliance station wall (0 deg).
+    //     drivetrain.RunOnce([this] { drivetrain.SeedFieldCentric(frc::Rotation2d{0_deg}); }),
+    //     // Then slowly drive forward (away from us) for 5 seconds.
+    //     drivetrain.ApplyRequest([this]() -> auto&& {
+    //         return drive.WithVelocityX(0.5_mps)
+    //             .WithVelocityY(0_mps)
+    //             .WithRotationalRate(0_tps);
+    //     })
+    //     .WithTimeout(5_s),
+    //     // Finally idle for the rest of auton
+    //     drivetrain.ApplyRequest([] { return swerve::requests::Idle{}; })
+    // );
+    return autoChooser.GetSelected();
+
 }

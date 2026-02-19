@@ -5,7 +5,7 @@ using namespace ctre::phoenix6;
 
 Telemetry::Telemetry(units::meters_per_second_t maxSpeed) : MaxSpeed{maxSpeed}
 {
-    SignalLogger::Start();
+    // SignalLogger::Start();
 
     /* Set up the module state Mechanism2d telemetry */
     for (size_t i = 0; i < m_moduleSpeeds.size(); ++i) {

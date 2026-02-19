@@ -6,6 +6,7 @@
 
 #include <frc2/command/CommandPtr.h>
 #include <frc2/command/button/CommandXboxController.h>
+#include <frc/smartdashboard/SendableChooser.h>
 #include "subsystems/CommandSwerveDrivetrain.h"
 #include "Telemetry.h"
 
@@ -27,13 +28,19 @@ private:
 
     frc2::CommandXboxController joystick{0};
 
+private:
+    /* Path follower */
+    frc::SendableChooser<frc2::Command *> autoChooser;
+
 public:
     subsystems::CommandSwerveDrivetrain drivetrain{TunerConstants::CreateDrivetrain()};
 
     RobotContainer();
 
-    frc2::CommandPtr GetAutonomousCommand();
+    frc2::Command *GetAutonomousCommand();
+
 
 private:
     void ConfigureBindings();
+
 };

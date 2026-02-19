@@ -3,10 +3,14 @@
 // the WPILib BSD license file in the root directory of this project.
 
 #include "Robot.h"
+#include "ctre/phoenix6/SignalLogger.hpp"
 
 #include <frc2/command/CommandScheduler.h>
 
-Robot::Robot() {}
+Robot::Robot() {
+
+  ctre::phoenix6::SignalLogger::EnableAutoLogging(false);
+}
 
 void Robot::RobotPeriodic() {
   frc2::CommandScheduler::GetInstance().Run();
@@ -22,7 +26,7 @@ void Robot::AutonomousInit() {
   m_autonomousCommand = m_container.GetAutonomousCommand();
 
   if (m_autonomousCommand) {
-    frc2::CommandScheduler::GetInstance().Schedule(m_autonomousCommand.value());
+    frc2::CommandScheduler::GetInstance().Schedule(m_autonomousCommand);
   }
 }
 
