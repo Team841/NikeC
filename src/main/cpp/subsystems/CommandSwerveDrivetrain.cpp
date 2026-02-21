@@ -18,6 +18,7 @@
 #include "frc2/command/Requirements.h"
 #include "limelights/LimelightHelpers.h"
 #include "pathplanner/lib/auto/AutoBuilder.h"
+#include "pathplanner/lib/commands/PathPlannerAuto.h"
 #include "pathplanner/lib/config/RobotConfig.h"
 #include "pathplanner/lib/path/GoalEndState.h"
 #include "pathplanner/lib/path/IdealStartingState.h"
@@ -118,9 +119,9 @@ void CommandSwerveDrivetrain::ConfigurePathPlanner(){
     RobotConfig config = RobotConfig::fromGUISettings();
 
     AutoBuilder::configure(
-         [this](){ return this->GetState().Pose; }, // Robot pose supplier
-        [this](frc::Pose2d pose){ this->ResetPose(pose); }, // Method to reset odometry (will be called if your auto has a starting pose)
-        [this](){ return this->GetState().Speeds; }, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
+         [this]{ return GetState().Pose; }, // Robot pose supplier
+        [this](frc::Pose2d pose){ ResetPose(pose); }, // Method to reset odometry (will be called if your auto has a starting pose)
+        [this]{ return GetState().Speeds; }, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
         [this](auto speeds, auto feedforwards){ 
             return SetControl(
                 rSpeeds.WithSpeeds(frc::ChassisSpeeds::Discretize(speeds, 20_ms))
@@ -196,14 +197,17 @@ frc2::CommandPtr CommandSwerveDrivetrain::buildPickupAuto(){
     if (adjustedPoseHold.size() > 2 && !(adjustedPoseHold[0] == frc::Pose3d{})){
         // std::vector<Waypoint> waypoints = PathPlannerPath::waypointsFromPoses();
 
-        std::vector<frc::Pose2d> poses2d(adjustedPoseHold.size());
+        std::vector<frc::Pose2d> poses2d;
+        poses2d.reserve(adjustedPoseHold.size());
 
-        poses2d.push_back(this->GetState().Pose);
+        // poses2d.push_back(this->GetState().Pose);
         
         for (auto &p : adjustedPoseHold){
-            if (p != frc::Pose3d{}) poses2d.push_back(p.ToPose2d());
+            if (p.Translation() != frc::Translation3d{}) poses2d.push_back(p.ToPose2d());
+            std::cout<< "x val: " << p.Translation().ToTranslation2d().X().value() << "; y val: " << p.Translation().ToTranslation2d().Y().value() << std::endl;
         }
 
+        PathPlannerPath::clearPathCache();
         std::vector<Waypoint> waypoints = PathPlannerPath::waypointsFromPoses(poses2d);
 
         PathConstraints constraints(1.0_mps, 0.5_mps_sq, 360_deg_per_s, 720_deg_per_s_sq); // The constraints for this path.
@@ -219,27 +223,33 @@ frc2::CommandPtr CommandSwerveDrivetrain::buildPickupAuto(){
 
         std::cout << "At the point" << std::endl;
 
-        RobotConfig config = RobotConfig::fromGUISettings();
+        // RobotConfig config = RobotConfig::fromGUISettings();
 
+        // auto controller = std::make_shared<PPHolonomicDriveController>( // PPHolonomicController is the built in path following controller for holonomic drive trains
+        //     PIDConstants(10.0, 0.0, 0.0), // Translation PID constants
+        //     PIDConstants(7.0, 0.0, 0.0));
+        
+        // controller->reset(this->GetState().Pose, this->GetState().Speeds);
 
-        return FollowPathCommand(
-            path,
-            [this]{return this->GetState().Pose;},
-            [this]{return this->GetState().Speeds;},
-            [this](auto speeds, auto feedforwards){ 
-                return SetControl(
-                    rSpeeds.WithSpeeds(frc::ChassisSpeeds::Discretize(speeds, 20_ms))
-                        // .WithWheelForceFeedforwardsX(feedforwards.robotRelativeForcesX)
-                        // .WithWheelForceFeedforwardsY(feedforwards.robotRelativeForcesY)
-                );
-            },
-            std::make_shared<PPHolonomicDriveController>( // PPHolonomicController is the built in path following controller for holonomic drive trains
-            PIDConstants(10.0, 0.0, 0.0), // Translation PID constants
-            PIDConstants(7.0, 0.0, 0.0)), // Rotation PID constants 
-            std::move(config),
-            []{return false;},
-            frc2::Requirements({this})
-        ).ToPtr();
+        // auto followcommand =  FollowPathCommand(
+        //     path,
+        //     [this]{return this->GetState().Pose;},
+        //     [this]{return this->GetState().Speeds;},
+        //     [this](auto speeds, auto feedforwards){ 
+        //         return SetControl(
+        //             rSpeeds.WithSpeeds(frc::ChassisSpeeds::Discretize(speeds, 20_ms))
+        //                 // .WithWheelForceFeedforwardsX(feedforwards.robotRelativeForcesX)
+        //                 // .WithWheelForceFeedforwardsY(feedforwards.robotRelativeForcesY)
+        //         );
+        //     },
+        //     std::move(controller), // Rotation PID constants 
+        //     std::move(config),
+        //     []{return false;},
+        //     frc2::Requirements({this})
+        // ).ToPtr();
+
+        // return followcommand;
+        return AutoBuilder::followPath(path);
     }
 
     return frc2::InstantCommand().ToPtr();
