@@ -15,16 +15,21 @@
 #include "frc/geometry/Translation3d.h"
 #include "frc2/command/CommandPtr.h"
 #include "frc2/command/InstantCommand.h"
+#include "frc2/command/Requirements.h"
 #include "limelights/LimelightHelpers.h"
 #include "pathplanner/lib/auto/AutoBuilder.h"
 #include "pathplanner/lib/config/RobotConfig.h"
 #include "pathplanner/lib/path/GoalEndState.h"
+#include "pathplanner/lib/path/IdealStartingState.h"
 #include "pathplanner/lib/path/PathPlannerPath.h"
 #include "pathplanner/lib/path/Waypoint.h"
 #include "units/angular_velocity.h"
 #include "units/length.h"
 #include "units/time.h"
 #include <iostream>
+#include "pathplanner/lib/commands/FollowPathCommand.h"
+
+
 
 using namespace subsystems;
 
@@ -192,9 +197,11 @@ frc2::CommandPtr CommandSwerveDrivetrain::buildPickupAuto(){
         // std::vector<Waypoint> waypoints = PathPlannerPath::waypointsFromPoses();
 
         std::vector<frc::Pose2d> poses2d(adjustedPoseHold.size());
+
+        poses2d.push_back(this->GetState().Pose);
         
         for (auto &p : adjustedPoseHold){
-            poses2d.push_back(p.ToPose2d());
+            if (p != frc::Pose3d{}) poses2d.push_back(p.ToPose2d());
         }
 
         std::vector<Waypoint> waypoints = PathPlannerPath::waypointsFromPoses(poses2d);
@@ -212,7 +219,27 @@ frc2::CommandPtr CommandSwerveDrivetrain::buildPickupAuto(){
 
         std::cout << "At the point" << std::endl;
 
-        return AutoBuilder::followPath(path);
+        RobotConfig config = RobotConfig::fromGUISettings();
+
+
+        return FollowPathCommand(
+            path,
+            [this]{return this->GetState().Pose;},
+            [this]{return this->GetState().Speeds;},
+            [this](auto speeds, auto feedforwards){ 
+                return SetControl(
+                    rSpeeds.WithSpeeds(frc::ChassisSpeeds::Discretize(speeds, 20_ms))
+                        // .WithWheelForceFeedforwardsX(feedforwards.robotRelativeForcesX)
+                        // .WithWheelForceFeedforwardsY(feedforwards.robotRelativeForcesY)
+                );
+            },
+            std::make_shared<PPHolonomicDriveController>( // PPHolonomicController is the built in path following controller for holonomic drive trains
+            PIDConstants(10.0, 0.0, 0.0), // Translation PID constants
+            PIDConstants(7.0, 0.0, 0.0)), // Rotation PID constants 
+            std::move(config),
+            []{return false;},
+            frc2::Requirements({this})
+        ).ToPtr();
     }
 
     return frc2::InstantCommand().ToPtr();

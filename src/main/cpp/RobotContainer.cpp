@@ -4,12 +4,16 @@
 
 #include "RobotContainer.h"
 #include "frc/DriverStation.h"
+#include "frc2/command/CommandPtr.h"
+#include "frc2/command/Requirements.h"
+#include "frc2/command/RunCommand.h"
 #include "pathplanner/lib/auto/AutoBuilder.h"
 #include "units/velocity.h"
 #include <frc/smartdashboard/SmartDashboard.h>
 
 #include <frc2/command/Commands.h>
 #include <frc2/command/button/RobotModeTriggers.h>
+#include <frc2/command/DeferredCommand.h>
 
 RobotContainer::RobotContainer()
 {
@@ -58,8 +62,22 @@ void RobotContainer::ConfigureBindings()
 
 
     joystick.X().WhileTrue(
-        drivetrain.buildPickupAuto()
-).OnFalse(
+        // frc2::DeferredCommand(
+        //     [this]{
+        //         return pathplanner::AutoBuilder::resetOdom(drivetrain.GetState().Pose).AndThen(
+        //             drivetrain.buildPickupAuto()
+        //         );
+        //     },
+        //     frc2::Requirements({&drivetrain})
+        // ).ToPtr()
+        frc2::DeferredCommand(
+            [this]{
+                return drivetrain.buildPickupAuto();
+            },
+            frc2::Requirements({&drivetrain})
+        ).ToPtr()
+    )
+    .OnFalse(
         this->drivetrain.ApplyRequest(
             [this]() -> auto&& {
                 return drive.WithVelocityX(0_mps).WithVelocityY(0_mps).WithRotationalRate(0_tps);
