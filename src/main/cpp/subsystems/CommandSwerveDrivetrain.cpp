@@ -24,6 +24,7 @@
 #include "units/angular_velocity.h"
 #include "units/length.h"
 #include "units/time.h"
+#include <iostream>
 
 using namespace subsystems;
 
@@ -184,15 +185,11 @@ void CommandSwerveDrivetrain::processIphone(){
 frc2::CommandPtr CommandSwerveDrivetrain::buildPickupAuto(){
 
     using namespace pathplanner;
+    
+    std::cout << ((adjustedPoseHold.size() > 2 && !(adjustedPoseHold[0] == frc::Pose3d{})) ? "Eval: True" : "Eval: False") << std::endl;
 
-    frc2::CommandPtr pathfindingCommand = frc2::InstantCommand().ToPtr();
-
-    if (adjustedPoseHold.size() >= 1 && !(adjustedPoseHold[0] == frc::Pose3d{})){
+    if (adjustedPoseHold.size() > 2 && !(adjustedPoseHold[0] == frc::Pose3d{})){
         // std::vector<Waypoint> waypoints = PathPlannerPath::waypointsFromPoses();
-
-        if (adjustedPoseHold.size() <= 2){
-            return pathfindingCommand;   
-        }
 
         std::vector<frc::Pose2d> poses2d(adjustedPoseHold.size());
         
@@ -213,8 +210,10 @@ frc2::CommandPtr CommandSwerveDrivetrain::buildPickupAuto(){
 
         path->preventFlipping = true;
 
+        std::cout << "At the point" << std::endl;
+
         return AutoBuilder::followPath(path);
     }
 
-    return pathfindingCommand;
+    return frc2::InstantCommand().ToPtr();
 }

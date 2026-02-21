@@ -59,7 +59,7 @@ void RobotContainer::ConfigureBindings()
 
     joystick.X().WhileTrue(
         drivetrain.buildPickupAuto()
-).WhileFalse(
+).OnFalse(
         this->drivetrain.ApplyRequest(
             [this]() -> auto&& {
                 return drive.WithVelocityX(0_mps).WithVelocityY(0_mps).WithRotationalRate(0_tps);
