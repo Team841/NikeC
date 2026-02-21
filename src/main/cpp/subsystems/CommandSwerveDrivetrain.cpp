@@ -134,6 +134,10 @@ void CommandSwerveDrivetrain::ConfigurePathPlanner(){
     );
 }
 
+void processIphone(){
+    
+}
+
 frc2::CommandPtr CommandSwerveDrivetrain::buildPickupAuto(){
     using namespace pathplanner;
 
@@ -147,13 +151,8 @@ frc2::CommandPtr CommandSwerveDrivetrain::buildPickupAuto(){
     poseAdjusted.reserve(listOfPoses.size());
     
     frc::Pose2d currPose = this->GetState().Pose;
-    // frc::Rotation3d rot = frc::Rotation3d{
-    //     0_deg,
-    //     0_deg,
-    //     currPose.Rotation().Degrees()   
-    // };
 
-    for (auto p : listOfPoses){
+    for (auto &p : listOfPoses){
         poses2d.emplace_back(frc::Pose2d{
             p.ToPose2d().Translation(),
             frc::Rotation2d{
@@ -167,15 +166,6 @@ frc2::CommandPtr CommandSwerveDrivetrain::buildPickupAuto(){
             p.Z(),
             frc::Rotation3d{}
         };
-
-        // auto trans = frc::Transform3d{
-        //     frc::Translation3d{
-        //         currPose.X(),
-        //         currPose.Y(),
-        //         p.Z()
-        //     },
-        //     frc::Rotation3d()
-        // };
         
         auto pRot = p.RotateAround(
             frc::Translation3d{},
@@ -194,22 +184,34 @@ frc2::CommandPtr CommandSwerveDrivetrain::buildPickupAuto(){
         );
     }
 
-    // if (listOfPoses.size() >= 1 && !(listOfPoses[0] == frc::Pose3d{})){
-    //     std::vector<Waypoint> waypoints = PathPlannerPath::waypointsFromPoses(poses2d);
+    if (listOfPoses.size() >= 1 && !(listOfPoses[0] == frc::Pose3d{})){
+        // std::vector<Waypoint> waypoints = PathPlannerPath::waypointsFromPoses();
 
-    //     PathConstraints constraints(1.0_mps, 0.5_mps_sq, 360_deg_per_s, 720_deg_per_s_sq); // The constraints for this path.
+        if (listOfPoses.size() <= 2){
+            return pathfindingCommand;   
+        }
+
+        std::vector<frc::Pose2d> poses2d(listOfPoses.size());
         
-    //     auto path = std::make_shared<PathPlannerPath>(
-    //         waypoints,
-    //         constraints,
-    //         std::nullopt,
-    //         GoalEndState(0.0_mps, frc::Rotation2d{0_deg})
-    //     );
+        for (auto &p : poseAdjusted){
+            poses2d.push_back(p.ToPose2d());
+        }
 
-    //     path->preventFlipping = true;
+        std::vector<Waypoint> waypoints = PathPlannerPath::waypointsFromPoses(poses2d);
 
-    //     pathfindingCommand = AutoBuilder::followPath(path);
-    // }
+        PathConstraints constraints(1.0_mps, 0.5_mps_sq, 360_deg_per_s, 720_deg_per_s_sq); // The constraints for this path.
+        
+        auto path = std::make_shared<PathPlannerPath>(
+            waypoints,
+            constraints,
+            std::nullopt,
+            GoalEndState(0.0_mps, frc::Rotation2d{0_deg})
+        );
+
+        path->preventFlipping = true;
+
+        pathfindingCommand = AutoBuilder::followPath(path);
+    }
 
     this->adjustedPoses.Set(poseAdjusted);
     

@@ -179,7 +179,6 @@ public:
     void ConfigurePathPlanner();
     frc2::CommandPtr buildPickupAuto();
 
-
     /**
      * \brief Adds a vision measurement to the Kalman Filter. This will correct the
      * odometry pose estimate while still accounting for measurement noise.

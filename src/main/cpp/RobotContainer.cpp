@@ -4,6 +4,7 @@
 
 #include "RobotContainer.h"
 #include "frc/DriverStation.h"
+#include "pathplanner/lib/auto/AutoBuilder.h"
 #include "units/velocity.h"
 #include <frc/smartdashboard/SmartDashboard.h>
 
@@ -54,6 +55,17 @@ void RobotContainer::ConfigureBindings()
     joystick.B().WhileTrue(drivetrain.ApplyRequest([this]() -> auto&& {
         return point.WithModuleDirection(frc::Rotation2d{-joystick.GetLeftY(), -joystick.GetLeftX()});
     }));
+
+
+    joystick.X().WhileTrue(
+        drivetrain.latestCommand.get()
+).WhileFalse(
+        this->drivetrain.ApplyRequest(
+            [this]() -> auto&& {
+                return drive.WithVelocityX(0_mps).WithVelocityY(0_mps).WithRotationalRate(0_tps);
+            }
+        )
+    );
 
     // reset the field-centric heading on left bumper press
     joystick.LeftBumper().OnTrue(drivetrain.RunOnce([this] { drivetrain.SeedFieldCentric(); }));
