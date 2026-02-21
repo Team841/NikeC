@@ -58,7 +58,7 @@ void RobotContainer::ConfigureBindings()
 
 
     joystick.X().WhileTrue(
-        drivetrain.latestCommand.get()
+        drivetrain.buildPickupAuto()
 ).WhileFalse(
         this->drivetrain.ApplyRequest(
             [this]() -> auto&& {

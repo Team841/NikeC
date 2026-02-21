@@ -169,7 +169,8 @@ public:
     std::shared_ptr<nt::NetworkTable> appleTable = nt::NetworkTableInstance::GetDefault().GetTable("limelight-apple");
 
     nt::StructArraySubscriber<frc::Pose3d> targPoses = nt::NetworkTableInstance::GetDefault().GetTable("BVIS")->GetStructArrayTopic<frc::Pose3d>("Proj Poses").Subscribe(std::vector<frc::Pose3d>{});
-    nt::StructArrayPublisher<frc::Pose3d> adjustedPoses = nt::NetworkTableInstance::GetDefault().GetTable("BVIS")->GetStructArrayTopic<frc::Pose3d>("adjusted Poses").Publish();
+    nt::StructArrayPublisher<frc::Pose3d> adjustedPosesPublisher = nt::NetworkTableInstance::GetDefault().GetTable("BVIS")->GetStructArrayTopic<frc::Pose3d>("adjusted Poses").Publish();
+    std::vector<frc::Pose3d> adjustedPoseHold; 
 
     frc2::CommandPtr latestCommand = frc2::InstantCommand().ToPtr();
 
@@ -177,6 +178,7 @@ public:
     void visionPeriodic();
     void setLLSettings();
     void ConfigurePathPlanner();
+    void processIphone();
     frc2::CommandPtr buildPickupAuto();
 
     /**

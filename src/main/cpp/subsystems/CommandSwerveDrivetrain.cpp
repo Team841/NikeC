@@ -49,7 +49,8 @@ void CommandSwerveDrivetrain::Periodic()
     // }
 
     this->visionPeriodic();
-    this->latestCommand = this->buildPickupAuto();
+    // this->latestCommand = this->buildPickupAuto();
+    this->processIphone();
 }
 
 void CommandSwerveDrivetrain::StartSimThread()
@@ -134,15 +135,7 @@ void CommandSwerveDrivetrain::ConfigurePathPlanner(){
     );
 }
 
-void processIphone(){
-    
-}
-
-frc2::CommandPtr CommandSwerveDrivetrain::buildPickupAuto(){
-    using namespace pathplanner;
-
-    frc2::CommandPtr pathfindingCommand = frc2::InstantCommand().ToPtr();
-
+void CommandSwerveDrivetrain::processIphone(){
     std::vector<frc::Pose3d> listOfPoses = this->targPoses.Get();
 
     std::vector<frc::Pose2d> poses2d;
@@ -184,16 +177,26 @@ frc2::CommandPtr CommandSwerveDrivetrain::buildPickupAuto(){
         );
     }
 
-    if (listOfPoses.size() >= 1 && !(listOfPoses[0] == frc::Pose3d{})){
+    this->adjustedPosesPublisher.Set(poseAdjusted);
+    this->adjustedPoseHold = poseAdjusted;
+}
+
+frc2::CommandPtr CommandSwerveDrivetrain::buildPickupAuto(){
+
+    using namespace pathplanner;
+
+    frc2::CommandPtr pathfindingCommand = frc2::InstantCommand().ToPtr();
+
+    if (adjustedPoseHold.size() >= 1 && !(adjustedPoseHold[0] == frc::Pose3d{})){
         // std::vector<Waypoint> waypoints = PathPlannerPath::waypointsFromPoses();
 
-        if (listOfPoses.size() <= 2){
+        if (adjustedPoseHold.size() <= 2){
             return pathfindingCommand;   
         }
 
-        std::vector<frc::Pose2d> poses2d(listOfPoses.size());
+        std::vector<frc::Pose2d> poses2d(adjustedPoseHold.size());
         
-        for (auto &p : poseAdjusted){
+        for (auto &p : adjustedPoseHold){
             poses2d.push_back(p.ToPose2d());
         }
 
@@ -210,10 +213,8 @@ frc2::CommandPtr CommandSwerveDrivetrain::buildPickupAuto(){
 
         path->preventFlipping = true;
 
-        pathfindingCommand = AutoBuilder::followPath(path);
+        return AutoBuilder::followPath(path);
     }
 
-    this->adjustedPoses.Set(poseAdjusted);
-    
     return pathfindingCommand;
 }
